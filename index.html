@@ -130,6 +130,7 @@
 <header>
   <h1><span class="emoji">🍌</span> ばなな先生 <span class="emoji">🎓</span></h1>
   <p class="tagline">バナナの写真をどうぞ。熟れ具合を見きわめて、いちばんおいしい使い方を教えます。</p>
+  <p style="color:#b8860b;font-size:0.85rem;margin-top:2px;">Snap a banana — I'll tell you how ripe it is and what to make with it. 🍌</p>
 </header>
 
 <div class="card">
@@ -152,6 +153,7 @@
     <div>
       <div class="result-title" id="resultTitle"></div>
       <div class="result-sub" id="resultSub"></div>
+      <div class="result-en" id="resultEn" style="font-size:0.85rem;color:#b8860b;margin-top:2px;"></div>
     </div>
   </div>
   <div class="meter"><div id="meterFill"></div></div>
@@ -170,11 +172,11 @@ import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transfo
 env.allowLocalModels = false;
 
 const CLASSES = {
-  green:  { emoji: '🟢', title: 'まだ青いバナナ',   sub: '未熟です',           advice: '加熱すると甘くなるタイプ。<b>バナナチップス</b>や<b>焼きバナナ</b>、カレーに入れても◎。常温で2〜3日置けば黄色くなります。' },
-  ripe:   { emoji: '🍌', title: '食べごろバナナ',   sub: 'いちばんおいしい時期', advice: 'そのまま食べるのが一番！<b>バナナスムージー</b>や<b>ヨーグルト添え</b>も最高です。皮にシュガースポットが出はじめたら次の段階。' },
-  over:   { emoji: '🟤', title: '完熟バナナ',       sub: '甘さが最大級',        advice: '甘みが強いので<b>バナナブレッド</b>や<b>バナナケーキ</b>のチャンス！つぶして冷凍しておけば、いつでもスムージーに使えます。' },
-  rotten: { emoji: '⚠️', title: 'そろそろ危ない',   sub: '傷みが進んでいます',  advice: '黒ずみやカビがある場合は食べずに処分しましょう。まだ中身がきれいなら加熱調理で使い切るのが安全です。' },
-  other:  { emoji: '🤔', title: 'これは…バナナ？', sub: 'バナナに見えませんでした', advice: 'バナナが大きく写っている写真で、もう一度ためしてみてください。皮ごと・房ごとでも大丈夫です。' },
+  green:  { emoji: '🟢', title: 'まだ青いバナナ',   sub: '未熟です',           en: 'Unripe — cook it, don\'t eat it raw',           advice: '加熱すると甘くなるタイプ。<b>バナナチップス</b>や<b>焼きバナナ</b>、カレーに入れても◎。常温で2〜3日置けば黄色くなります。' },
+  ripe:   { emoji: '🍌', title: '食べごろバナナ',   sub: 'いちばんおいしい時期', en: 'Perfectly ripe — enjoy now', advice: 'そのまま食べるのが一番！<b>バナナスムージー</b>や<b>ヨーグルト添え</b>も最高です。皮にシュガースポットが出はじめたら次の段階。' },
+  over:   { emoji: '🟤', title: '完熟バナナ',       sub: '甘さが最大級',        en: 'Very ripe — best for baking',        advice: '甘みが強いので<b>バナナブレッド</b>や<b>バナナケーキ</b>のチャンス！つぶして冷凍しておけば、いつでもスムージーに使えます。' },
+  rotten: { emoji: '⚠️', title: 'そろそろ危ない',   sub: '傷みが進んでいます',  en: 'Past its prime — check before eating',  advice: '黒ずみやカビがある場合は食べずに処分しましょう。まだ中身がきれいなら加熱調理で使い切るのが安全です。' },
+  other:  { emoji: '🤔', title: 'これは…バナナ？', sub: 'バナナに見えませんでした', en: 'That does not look like a banana', advice: 'バナナが大きく写っている写真で、もう一度ためしてみてください。皮ごと・房ごとでも大丈夫です。' },
 };
 
 // 各クラスに複数の言い方を用意し、いちばん合う言い方のスコアを採用する（ゼロショット分類の定番テクニック）
@@ -277,6 +279,7 @@ function showResult(key, score, all) {
   document.getElementById('resultEmoji').textContent = found.emoji;
   document.getElementById('resultTitle').textContent = found.title;
   document.getElementById('resultSub').textContent = found.sub;
+  document.getElementById('resultEn').textContent = found.en || '';
   document.getElementById('meterFill').style.width = Math.round(score * 100) + '%';
   document.getElementById('scoreLabel').textContent = '確信度（この見立ての自信）';
   document.getElementById('scoreValue').textContent = Math.round(score * 100) + '%';
