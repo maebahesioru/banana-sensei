@@ -169,12 +169,29 @@ import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transfo
 
 env.allowLocalModels = false;
 
-const LABELS = [
-  { key: 'green',   en: 'a photo of a green unripe banana',   emoji: '🟢', title: 'まだ青いバナナ',   sub: '未熟です',           advice: '加熱すると甘くなるタイプ。<b>バナナチップス</b>や<b>焼きバナナ</b>、カレーに入れても◎。常温で2〜3日置けば黄色くなります。' },
-  { key: 'ripe',    en: 'a photo of a ripe yellow banana',    emoji: '🍌', title: '食べごろバナナ',   sub: 'いちばんおいしい時期', advice: 'そのまま食べるのが一番！<b>バナナスムージー</b>や<b>ヨーグルト添え</b>も最高です。皮にシュガースポットが出はじめたら次の段階。' },
-  { key: 'over',    en: 'a photo of an overripe brown banana', emoji: '🟤', title: '完熟バナナ',       sub: '甘さが最大級',        advice: '甘みが強いので<b>バナナブレッド</b>や<b>バナナケーキ</b>のチャンス！つぶして冷凍しておけば、いつでもスムージーに使えます。' },
-  { key: 'rotten',  en: 'a photo of a rotten banana',         emoji: '⚠️', title: 'そろそろ危ない',   sub: '傷みが進んでいます',  advice: '黒ずみやカビがある場合は食べずに処分しましょう。まだ中身がきれいなら加熱調理で使い切るのが安全です。' },
-  { key: 'other',   en: 'a photo of something that is not a banana', emoji: '🤔', title: 'これは…バナナ？', sub: 'バナナに見えませんでした', advice: 'バナナが大きく写っている写真で、もう一度ためしてみてください。皮ごと・房ごとでも大丈夫です。' },
+const CLASSES = {
+  green:  { emoji: '🟢', title: 'まだ青いバナナ',   sub: '未熟です',           advice: '加熱すると甘くなるタイプ。<b>バナナチップス</b>や<b>焼きバナナ</b>、カレーに入れても◎。常温で2〜3日置けば黄色くなります。' },
+  ripe:   { emoji: '🍌', title: '食べごろバナナ',   sub: 'いちばんおいしい時期', advice: 'そのまま食べるのが一番！<b>バナナスムージー</b>や<b>ヨーグルト添え</b>も最高です。皮にシュガースポットが出はじめたら次の段階。' },
+  over:   { emoji: '🟤', title: '完熟バナナ',       sub: '甘さが最大級',        advice: '甘みが強いので<b>バナナブレッド</b>や<b>バナナケーキ</b>のチャンス！つぶして冷凍しておけば、いつでもスムージーに使えます。' },
+  rotten: { emoji: '⚠️', title: 'そろそろ危ない',   sub: '傷みが進んでいます',  advice: '黒ずみやカビがある場合は食べずに処分しましょう。まだ中身がきれいなら加熱調理で使い切るのが安全です。' },
+  other:  { emoji: '🤔', title: 'これは…バナナ？', sub: 'バナナに見えませんでした', advice: 'バナナが大きく写っている写真で、もう一度ためしてみてください。皮ごと・房ごとでも大丈夫です。' },
+};
+
+// 各クラスに複数の言い方を用意し、いちばん合う言い方のスコアを採用する（ゼロショット分類の定番テクニック）
+const PROMPTS = [
+  { key: 'green',  en: 'a photo of an unripe green banana' },
+  { key: 'green',  en: 'a photo of green bananas on a plant' },
+  { key: 'green',  en: 'a photo of hard green bananas' },
+  { key: 'ripe',   en: 'a photo of a fresh yellow banana' },
+  { key: 'ripe',   en: 'a photo of ripe yellow bananas' },
+  { key: 'ripe',   en: 'a photo of a perfect yellow banana' },
+  { key: 'over',   en: 'a photo of an old banana with brown spots' },
+  { key: 'over',   en: 'a photo of a very ripe brown banana' },
+  { key: 'over',   en: 'a photo of overripe bananas with blackened skin' },
+  { key: 'rotten', en: 'a photo of a rotten banana covered in mold' },
+  { key: 'rotten', en: 'a photo of a spoiled black mushy banana' },
+  { key: 'rotten', en: 'a photo of a decayed rotting banana' },
+  { key: 'other',  en: 'a photo of something that is not a banana' },
 ];
 
 let classifier = null;
@@ -234,10 +251,18 @@ analyzeBtn.addEventListener('click', async () => {
   try {
     const clf = await loadModel();
     setStatus('🔍 じっと見ています…');
-    const output = await clf(currentImageURL, LABELS.map(l => l.en));
-    const top = output[0];
-    const found = LABELS.find(l => l.en === top.label) || LABELS[4];
-    showResult(found, top.score, output);
+    const output = await clf(currentImageURL, PROMPTS.map(p => p.en));
+    // クラスごとに「いちばん合った言い方」のスコアを採用
+    const byClass = {};
+    for (const o of output) {
+      const key = (PROMPTS.find(p => p.en === o.label) || { key: 'other' }).key;
+      if (!byClass[key] || o.score > byClass[key]) byClass[key] = o.score;
+    }
+    let bestKey = 'other', bestScore = 0;
+    for (const [k, v] of Object.entries(byClass)) {
+      if (v > bestScore) { bestKey = k; bestScore = v; }
+    }
+    showResult(bestKey, bestScore, output);
   } catch (err) {
     setStatus('⚠️ エラーが発生しました: ' + err.message);
   } finally {
@@ -245,8 +270,9 @@ analyzeBtn.addEventListener('click', async () => {
   }
 });
 
-function showResult(found, score, all) {
+function showResult(key, score, all) {
   setStatus('');
+  const found = CLASSES[key] || CLASSES.other;
   document.getElementById('result').classList.add('show');
   document.getElementById('resultEmoji').textContent = found.emoji;
   document.getElementById('resultTitle').textContent = found.title;
@@ -254,7 +280,7 @@ function showResult(found, score, all) {
   document.getElementById('meterFill').style.width = Math.round(score * 100) + '%';
   document.getElementById('scoreLabel').textContent = '確信度（この見立ての自信）';
   document.getElementById('scoreValue').textContent = Math.round(score * 100) + '%';
-  // NOTE: advice strings are static constants from LABELS; no untrusted input.
+  // NOTE: advice strings are static constants from CLASSES; no untrusted input.
   document.getElementById('advice').innerHTML = '<h3>🍽 ばなな先生のアドバイス</h3>' + found.advice;
 }
 </script>
