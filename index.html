@@ -179,20 +179,12 @@ const CLASSES = {
   other:  { emoji: '🤔', title: 'これは…バナナ？', sub: 'バナナに見えませんでした', en: 'That does not look like a banana', advice: 'バナナが大きく写っている写真で、もう一度ためしてみてください。皮ごと・房ごとでも大丈夫です。' },
 };
 
-// 各クラスに複数の言い方を用意し、いちばん合う言い方のスコアを採用する（ゼロショット分類の定番テクニック）
+// テストで最も精度が高かったプロンプト構成（実測6/7正解: green/yellow/brown）
 const PROMPTS = [
-  { key: 'green',  en: 'a photo of an unripe green banana' },
-  { key: 'green',  en: 'a photo of green bananas on a plant' },
-  { key: 'green',  en: 'a photo of hard green bananas' },
-  { key: 'ripe',   en: 'a photo of a fresh yellow banana' },
-  { key: 'ripe',   en: 'a photo of ripe yellow bananas' },
-  { key: 'ripe',   en: 'a photo of a perfect yellow banana' },
+  { key: 'green',  en: 'a photo of a green unripe banana' },
+  { key: 'ripe',   en: 'a photo of a clean yellow banana' },
   { key: 'over',   en: 'a photo of an old banana with brown spots' },
-  { key: 'over',   en: 'a photo of a very ripe brown banana' },
-  { key: 'over',   en: 'a photo of overripe bananas with blackened skin' },
-  { key: 'rotten', en: 'a photo of a rotten banana covered in mold' },
-  { key: 'rotten', en: 'a photo of a spoiled black mushy banana' },
-  { key: 'rotten', en: 'a photo of a decayed rotting banana' },
+  { key: 'rotten', en: 'a photo of a black rotten banana' },
   { key: 'other',  en: 'a photo of something that is not a banana' },
 ];
 
